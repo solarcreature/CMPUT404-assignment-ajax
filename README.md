@@ -11,5 +11,6 @@ Contributors / Licensing
 ========================
 
 Generally everything is LICENSE'D under the Apache 2 license by Abram Hindle.
+Modifications are LICENSE'D under Apache 2 by Sanjeev Kotha
 
 
