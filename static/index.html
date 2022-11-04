@@ -31,7 +31,6 @@ var context = canvas.getContext("2d");
 var W = canvas.width  = window.innerWidth-6;
 var H = canvas.height = window.innerHeight-50;
 
-
 function sendJSONXMLHTTPRequest(url, objects, callback) {
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function () {
@@ -39,7 +38,9 @@ function sendJSONXMLHTTPRequest(url, objects, callback) {
             try {
                 if (xhr.status==200) {
                     //XXX: parse some JSON from the request!
+                    var data = JSON.parse(xhr.responseText);
                     //XXX: Pass the data to the callback!
+                    callback(data);
                 }
             } 
             catch(e) {
@@ -48,8 +49,38 @@ function sendJSONXMLHTTPRequest(url, objects, callback) {
         }
     };
     //XXX: POST to a URL
+    xhr.open('POST',url,true);
     //XXX: set the mimetype and the accept headers!
     // Remember to use application/json !
+    xhr.setRequestHeader("Accept", "application/json");
+    xhr.setRequestHeader("Content-Type","application/json");
+    xhr.send(JSON.stringify(objects));
+}
+
+
+function sendJSONXMLHTTPRequestGET(url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState==4) {
+            try {
+                if (xhr.status==200) {
+                    //XXX: parse some JSON from the request!
+                    var data = JSON.parse(xhr.responseText);
+                    //XXX: Pass the data to the callback!
+                    callback(data);
+                }
+            } 
+            catch(e) {
+                alert('Error: ' + e.name);
+            }
+        }
+    };
+    xhr.open('GET',url,true);
+    //XXX: set the mimetype and the accept headers!
+    // Remember to use application/json !
+    xhr.setRequestHeader("Accept", "application/json");
+    xhr.setRequestHeader("Content-Type","application/json");
+    xhr.send();
 }
 
 
@@ -59,14 +90,18 @@ world = {};
 function drawCircle(context,entity) {
     with(context) {
         beginPath();              
-        lineWidth = 3;
+        lineWidth = 20;
+
+        var gradient = createLinearGradient(0,0,0,canvas.height);
+        gradient.addColorStop(0, 'orange');
+        gradient.addColorStop(0.5, 'blue');
+        gradient.addColorStop(1, 'purple');
+
         var x = entity["x"];
         var y = entity["y"];
-        //moveTo(x,y);
-        fillStyle = entity["colour"];
-        strokeStyle = fillStyle;
+        fillStyle = gradient;
         arc(x, y, (entity["radius"])?entity["radius"]:50, 0, 2.0 * Math.PI, false);  
-        stroke();                                
+        fill();                                
     }
 }
 
@@ -133,12 +168,16 @@ function getPosition(e) {
 	}
 }
 
+function on_call() {
+
+}
 
 function addEntity(entity, data) {
     world[entity] = data;
     drawNextFrame(); // (but should we?)
     //XXX: Send a XHTML Request that updates the entity you just  modified!
-
+    var url = window.location.origin + "/entity/" + entity;
+    sendJSONXMLHTTPRequest(url,JSON.stringify(data),on_call)
 }
 
 var counter = 0;
@@ -247,21 +286,24 @@ mouse = (function() {
 // Add the application specific mouse listeners!
 //XXX: TODO Make these prettier!
 mouse.mousedowners.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'blue'});
+    addEntityWithoutName({'x':x,'y':y,'colour':'#BE2ED6','radius':15});
 });
 
 mouse.mouseuppers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'red'});
+    addEntityWithoutName({'x':x,'y':y,'colour':'#4ADEDE','radius':12});
 });
 
 mouse.mousedraggers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'green',
+    addEntityWithoutName({'x':x,'y':y,'colour':'#EE9F27',
                           'radius':10});
 });
 
 
 function update() {
     //XXX: TODO Get the world from the webservice using a XMLHTTPRequest
+    var url = "http://" + location.host + '/world'; 
+    sendJSONXMLHTTPRequestGET(url, on_call);
+    drawNextFrame();
     drawFrame();
 }
 
